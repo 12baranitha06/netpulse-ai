@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>NetPulse AI Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+}
+
+h1{
+    margin-top:20px;
+}
+
+#status{
+    font-size:24px;
+    font-weight:bold;
+}
+
+.cards{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin-top:20px;
+}
+
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:10px;
+    width:200px;
+}
+
+.container{
+    width:80%;
+    margin:auto;
+}
+
+canvas{
+    margin-top:40px;
+}
+
+button{
+    padding:10px;
+    margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>NetPulse AI Network Monitor</h1>
+
+<h2>Network Status: <span id="status">Checking...</span></h2>
+
+<a href="/download">
+<button>Download Network Logs</button>
+</a>
+
+<div class="cards">
+
+<div class="card">
+<h3>Current Latency</h3>
+<h2 id="latencyValue">-- ms</h2>
+</div>
+
+<div class="card">
+<h3>Packet Loss</h3>
+<h2 id="lossValue">-- %</h2>
+</div>
+
+</div>
+
+<div class="container">
+
+<h3>Latency Graph</h3>
+<canvas id="latencyChart"></canvas>
+
+<h3>Packet Loss Graph</h3>
+<canvas id="lossChart"></canvas>
+
+</div>
+
+<script>
+
+const latencyCtx = document.getElementById('latencyChart').getContext('2d')
+const lossCtx = document.getElementById('lossChart').getContext('2d')
+
+const latencyChart = new Chart(latencyCtx,{
+type:'line',
+data:{
+labels:[],
+datasets:[{
+label:'Latency (ms)',
+data:[],
+borderWidth:2
+}]
+}
+})
+
+const lossChart = new Chart(lossCtx,{
+type:'line',
+data:{
+labels:[],
+datasets:[{
+label:'Packet Loss (%)',
+data:[],
+borderWidth:2
+}]
+}
+})
+
+function updateDashboard(){
+
+fetch("/data")
+.then(response => response.json())
+.then(data => {
+
+latencyChart.data.labels = data.times
+latencyChart.data.datasets[0].data = data.latency
+
+lossChart.data.labels = data.times
+lossChart.data.datasets[0].data = data.loss
+
+document.getElementById("latencyValue").innerText =
+data.latency[data.latency.length-1] + " ms"
+
+document.getElementById("lossValue").innerText =
+data.loss[data.loss.length-1] + " %"
+
+const statusElement = document.getElementById("status")
+statusElement.innerText = data.status
+
+if(data.status === "Healthy"){
+statusElement.style.color = "lime"
+}
+else if(data.status === "Warning"){
+statusElement.style.color = "orange"
+}
+else{
+statusElement.style.color = "red"
+}
+
+latencyChart.update()
+lossChart.update()
+
+})
+
+}
+
+setInterval(updateDashboard,5000)
+
+updateDashboard()
+
+</script>
+
+</body>
+</html>
